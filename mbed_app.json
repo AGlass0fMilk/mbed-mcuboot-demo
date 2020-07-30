@@ -4,7 +4,10 @@
         "*": {
             "target.restrict_size": "0x20000",
             "target.c_lib": "small",
-            "target.console-uart": false
+            "target.console-uart": false,
+            "platform.stdio-minimal-console-only": true,
+            "platform.minimal-printf-disable-all": true,
+            "platform.crash-capture-enabled": false
         },
 	"NRF52840_DK": {
             "target.device_has_remove": ["ITM"],
