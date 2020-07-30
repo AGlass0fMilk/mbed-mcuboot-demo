@@ -7,6 +7,8 @@
 
 #include "BlockDevice.h"
 
+#include "secondary_bd.h"
+
 /** Enable serial bootloader feature by default */
 #ifndef MBED_CONF_APP_SERIAL_BOOTLOADER_ENABLE
 #define MBED_CONF_APP_SERIAL_BOOTLOADER_ENABLE 1
@@ -23,17 +25,9 @@ using namespace std::chrono;
 
 #endif // MBED_CONF_APP_SERIAL_BOOTLOADER_ENABLE
 
-mbed::BlockDevice* mcuboot_secondary_bd;
-
 void mbed_mcuboot_user_init(void) {
 
-    mbed::BlockDevice* mcuboot_secondary_bd = mbed::BlockDevice::get_default_instance();
-
-    // Initialize the secondary/update candidate block device
-    mcuboot_secondary_bd->init();
-
 #if MBED_CONF_APP_SERIAL_BOOTLOADER_ENABLE
-
     // Set up the serial bootloader
 
 #endif // MBED_CONF_APP_SERIAL_BOOTLOADER_ENABLE

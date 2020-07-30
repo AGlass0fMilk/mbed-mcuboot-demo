@@ -68,3 +68,11 @@ BlockDevice *BlockDevice::get_default_instance()
 
 }
 
+
+/**
+ * You may override this function if you want to provide a BlockDevice other than the system default
+ */
+//mbed::BlockDevice* get_secondary_bd(void) {
+//    return mbed::BlockDevice::get_default_instance();
+//}
+
