@@ -3,7 +3,8 @@
     "target_overrides": {
         "*": {
             "target.restrict_size": "0x20000",
-            "target.c_lib": "small"
+            "target.c_lib": "small",
+            "target.console-uart": false
         },
 	"NRF52840_DK": {
             "target.device_has_remove": ["ITM"],
