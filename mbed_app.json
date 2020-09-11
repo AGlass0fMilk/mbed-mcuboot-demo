@@ -1,9 +1,13 @@
 {
-    "requires": ["bare-metal", "mbedtls", "mcuboot", "flashiap-block-device", "spif-driver", "qspif", "mbed-trace", "serialcobs"],
+    "requires": ["bare-metal", "mbedtls", "mcuboot", "flashiap-block-device", "spif-driver", "qspif", "mbed-trace", "serialcobs", "rtos-api"],
     "config": {
         "serial-bootloader-enable": {
             "help": "Build bootloader with serial update support",
-            "value": 0
+            "value": 1
+        },
+        "use-button": {
+            "help": "Use button to trigger waiting for OTA or always delay at boot and wait for OTA to start. Only effective if serial bootloader is enabled.",
+            "value": 1
         }
     },
     "target_overrides": {
@@ -27,7 +31,8 @@
             "target.macros_remove": ["MBEDTLS_CONFIG_HW_SUPPORT"],
             "target.components_remove": ["QSPIF"],
             "target.components_add": ["SPIF", "FLASHIAP"],
-            "mcuboot.max-img-sectors": 256
+            "mcuboot.max-img-sectors": 256,
+            "app.use-button": 0
         }
     }
 }

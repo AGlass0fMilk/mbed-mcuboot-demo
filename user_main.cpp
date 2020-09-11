@@ -21,10 +21,17 @@
 #include "SerialOTA.h"
 
 #include "rtos/ThisThread.h"
+
+#include "platform/mbed_version.h"
+
+#if MBED_MAJOR_VERSION == 6
+#include "drivers/BufferedSerial.h"
 #include "rtos/Kernel.h"
 #include <chrono>
+#else
+#include "drivers/UARTSerial.h"
+#endif
 
-#include "drivers/BufferedSerial.h"
 #include "drivers/DigitalIn.h"
 #include "SerialCOBS.h"
 
@@ -32,11 +39,16 @@
 
 #include "bootutil.h"
 
-#define BOOT_WAIT_TIMEOUT 5s
-
+#if MBED_MAJOR_VERSION == 6
 using namespace std::chrono;
+#define BOOT_WAIT_TIMEOUT 5s
+#else
+#define BOOT_WAIT_TIMEOUT 5000
+#endif
 
+#if MBED_CONF_APP_USE_BUTTON
 mbed::DigitalIn button(BUTTON1);
+#endif
 
 // TODO - add led status indicator?
 
@@ -46,17 +58,25 @@ void mbed_mcuboot_user_init(void) {
 
 #if MBED_CONF_APP_SERIAL_BOOTLOADER_ENABLE
 
+#if MBED_CONF_APP_USE_BUTTON
     // If the button is held down upon bootup, start the serial bootloader
     if(button) {
        return;
     }
+#endif
 
     // Set up the serial interface
+#if MBED_MAJOR_VERSION == 6
     mbed::BufferedSerial pc(STDIO_UART_TX, STDIO_UART_RX, MBED_CONF_APP_SERIAL_BOOTLOADER_BAUD);
-    //mbed::BufferedSerial pc(P0_3, P0_4, MBED_CONF_APP_SERIAL_BOOTLOADER_BAUD);
-
+#else
+    mbed::UARTSerial pc(STDIO_UART_TX, STDIO_UART_RX, MBED_CONF_APP_SERIAL_BOOTLOADER_BAUD);
+#endif
     // Wait for a specified timeout until just booting
+#if MBED_MAJOR_VERSION == 6
     rtos::Kernel::Clock::duration time_waited = 0ms;
+#else
+    uint32_t time_waited = 0;
+#endif
     bool timed_out = true;
     uint8_t c = 1;
     while(time_waited < BOOT_WAIT_TIMEOUT) {
@@ -71,8 +91,13 @@ void mbed_mcuboot_user_init(void) {
         }
 
         // Otherwise, keep waiting
+#if MBED_MAJOR_VERSION == 6
         rtos::ThisThread::sleep_for(100ms);
         time_waited += 100ms;
+#else
+        rtos::ThisThread::sleep_for(100);
+        time_waited += 100;
+#endif
     }
 
     // Serial bootloader timed out, boot the main application
