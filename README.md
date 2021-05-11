@@ -28,21 +28,27 @@ The primary slot typically ends where the "mcuboot scratch region" begins (see S
 
 **Note:** If your application uses internal flash for data storage (eg: KVStore), you must carefully configure the memory regions allocated to the primary slot, the scratch region, and your application to ensure there are no conflicts.
 
+#### Primary Application
+
+The primary application is the currently installed, bootable application. In this demo it is the `mbed-mcuboot-blinky` application. The application start address is configured using `target.mbed_app_start` and the size can be restricted using `target.mbed_app_size`. The primary application size **must** be restricted to avoid colliding with the scratch space region (if used)!
+
 #### Application Header Info
 
 The application header info section is at the beginning of the "primary memory slot".
 
 When deciding what to boot/update, the mcuboot bootloader looks at an installed application's header info, which is a special struct prepended to the application binary. It uses this header info to validate that there is a bootable image installed in the "slot".
 
-By default, this header is configured to be 4kB in size. This can be adjusted using the configuration parameter `mcuboot.header_size`. 
+The header size is set and the header is created and prepended to the application binary by `imgtool` during the signing process (explained later).
 
-**However,** due to the way the FlashIAP block device currently works while erasing, the header_size should be configured to be the size of an erase sector (4kB in the case of an nRF52840). Erasing using the FlashIAPBlockDevice only works if the given address is erase-sector aligned!
+The minimum header size is determined by the size of interrupt vector table of the target. The interrupt vector table is located at the beginning of the application. The primary application start address (`target.mbed_app_start`) must conform to the requirements set by the target's architecture. For example, [the ARMv7-M reference manual](https://static.docs.arm.com/ddi0403/eb/DDI0403E_B_armv7m_arm.pdf) states that:
 
-This header is prepended to the application binary during the signing process (explained later).
+> The Vector table must be naturally aligned to a power of two whose alignment value is greater than or equal to (Number of Exceptions supported x 4), with a minimum alignment of 128 bytes.
 
-#### Primary Application
+The resulting minimum size depends on the SoC family, since the number of implemented exceptions differ. Check the reference manual of your MCU to calculate it.
 
-The primary application is the currently installed, bootable application. In this demo it is the `mbed-mcuboot-blinky` application. The application start address is configured using `target.mbed_app_start` and the size can be restricted using `target.mbed_app_size`. The primary application size **must** be restricted to avoid colliding with the scratch space region (if used)!
+To summarize, the header size, the primary slot address and the primary application address are related according to this equation:
+
+`mcuboot.primary-slot-address + header-size = target.mbed_app_start`
 
 #### Application TLV Trailers
 
