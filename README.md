@@ -132,6 +132,8 @@ You should also install the python package `intelhex` if it is not already insta
 
 This python package includes several utility scripts for working with binaries and .hex files.
 
+By default, the demo application and bootloader are built as hex files to support flashing multiple images to different addresses. Some targets need to have the latest debug interface firmwares to support this, for example ST-LINK's firmware upgrader can be found [here](https://www.st.com/en/development-tools/stsw-link007.html). If your target does not support hex images, a single bin image with everything merged together can be used instead as will be described in [Merging it all together](#Merging-it-all-together) below.
+
 ### Creating the signing keys and building the bootloader
 
 This section will only cover steps specific to setting up this project with a signing key pair and signing a main application binary. For more advanced use cases and information, such as using alternative signing algorithms to rsa-2048, see the [mcuboot documentation on Image Signing](https://github.com/mcu-tools/mcuboot/blob/master/docs/signed_images.md#image-signing).
@@ -236,7 +238,9 @@ Other toolchains will have a similar utility to perform this step.
 
 ### Merging it all together
 
-To be able to drag-and-drop program the whole demo together, it is necessary to merge all the hex files we created in the last steps together.
+Usually, if your target supports hex files, you can drag-and-drop one image at a time (waiting for each to finish) to program them into their respective locations.
+
+If your target doesn't support hex files or performs a whole chip erase upon every drag-and-drop action, it is necessary to merge all the hex files we created in the last steps together.
 
 At this step, you should have created three hex files:
 - mbed-mcuboot-demo.hex (the bootloader)

@@ -10,6 +10,7 @@
         "*": {
             "target.restrict_size": "0x20000",
             "target.c_lib": "small",
+            "target.OUTPUT_EXT": "hex",
             "mcuboot.log-level": "MCUBOOT_LOG_LEVEL_DEBUG",
             "mbed-trace.enable": true,
             "mbed-trace.fea-ipv6": false
