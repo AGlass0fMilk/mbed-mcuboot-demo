@@ -280,15 +280,16 @@ Once your target has been programmed, open a serial terminal to view the debug o
 ```
 -- Terminal on /dev/ttyACM1 - 9600,8,N,1 ---
 [INFO][BL]: Starting MCUboot
-[INFO][MCUb]: Primary image: magic=good, swap_type=0x2, copy_done=0x1, image_ok=0x1
-[INFO][MCUb]: Scratch: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-[INFO][MCUb]: Boot source: none
-[INFO][MCUb]: Swap type: none
+
+<Potentially random data from the UART>
+
 [INFO][BL]: Booting firmware image at 0x21000
 
 <Potentially random data from the UART>
 
-[INFO][main]: Hello version 1.2.3+4
+<Potentially random data from the UART>
+
+[INFO][main]: Regular boot
 [INFO][main]: > Press button to erase secondary slot
 
 ```
@@ -323,8 +324,6 @@ This causes the bootloader to check the secondary slot for a valid update binary
 You should see output similar to the following:
 
 ```
-[DBG ][MCUb]: writing magic; fa_id=1 off=0xbfff0 (0xbfff0)
-[DBG ][MCUb]: writing swap_info; fa_id=1 off=0xbffd8 (0xbffd8), swap_type=0x2 image_num=0x0
 [INFO][main]: > Secondary image pending, reboot to update
 ```
 
@@ -334,39 +333,26 @@ Now all you need to do to perform the update is reset your Mbed board! The mcubo
 
 ```
 [INFO][BL]: Starting MCUboot
-[INFO][MCUb]: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-[INFO][MCUb]: Scratch: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-[INFO][MCUb]: Boot source: primary slot
-[INFO][MCUb]: Swap type: test
-[DBG ][MCUb]: erasing scratch area
-[DBG ][MCUb]: initializing status; fa_id=2
-[DBG ][MCUb]: writing swap_info; fa_id=2 off=0x1ffd8 (0xfffd8), swap_type=0x2 image_num=0x0
-[DBG ][MCUb]: writing swap_size; fa_id=2 off=0x1ffd0 (0xfffd0)
-[DBG ][MCUb]: writing magic; fa_id=2 off=0x1fff0 (0xffff0)
-[DBG ][MCUb]: erasing trailer; fa_id=0
-[DBG ][MCUb]: initializing status; fa_id=0
-[DBG ][MCUb]: writing swap_info; fa_id=0 off=0xbffd8 (0xdffd8), swap_type=0x2 image_num=0x0
-[DBG ][MCUb]: writing swap_size; fa_id=0 off=0xbffd0 (0xdffd0)
-[DBG ][MCUb]: writing magic; fa_id=0 off=0xbfff0 (0xdfff0)
-[DBG ][MCUb]: erasing trailer; fa_id=1
-[DBG ][MCUb]: writing copy_done; fa_id=0 off=0xbffe0 (0xdffe0)
+
+<Potentially random data from the UART>
+
 [INFO][BL]: Booting firmware image at 0x21000
 
 <Potentially random data from the UART>
 
-[INFO][main]: Boot confirmed
-[INFO][main]: Hello version 1.2.3+5
-[INFO][main]: > Press button to erase secondary slot
+[INFO][main]: Firmware update applied successfully
+[INFO][main]: Press the button to confirm, or reboot to revert the update
 ```
-
-Notice that the reported version number has changed! The update was performed successfully.
 
 **Note:** After an update is performed, the new application must mark itself as "okay" to the mcuboot bootloader. If this does not occur, mcuboot will revert the update upon the next reboot (if configured to do so).
 
-The blinky application in this demo always does this at startup:
+To make the update as "okay", press the button as instructed. This causes the application to call
+`boot_set_confirmed()`.
+
+Now you should see:
 
 ```
-int ret = boot_set_confirmed();
+[INFO][main]: Current firmware set as confirmed
 ```
 
-In real world situations, your application should run a self test routine to ensure it can receive updates in the future (eg: the UART software works as expected, the BLE stack initializes successfully, etc).
+**Note:** In real world situations, your application should run a self test routine to ensure it can receive updates in the future (eg: the UART software works as expected, the BLE stack initializes successfully, etc).
