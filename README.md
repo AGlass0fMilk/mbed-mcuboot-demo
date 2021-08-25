@@ -132,6 +132,8 @@ You should also install the python package `intelhex` if it is not already insta
 
 This python package includes several utility scripts for working with binaries and .hex files.
 
+By default, the demo application and bootloader are built as hex files to support flashing multiple images to different addresses. Some targets need to have the latest debug interface firmwares to support this, for example ST-LINK's firmware upgrader can be found [here](https://www.st.com/en/development-tools/stsw-link007.html). If your target does not support hex images, a single bin image with everything merged together can be used instead as will be described in [Merging it all together](#Merging-it-all-together) below.
+
 ### Creating the signing keys and building the bootloader
 
 This section will only cover steps specific to setting up this project with a signing key pair and signing a main application binary. For more advanced use cases and information, such as using alternative signing algorithms to rsa-2048, see the [mcuboot documentation on Image Signing](https://github.com/mcu-tools/mcuboot/blob/master/docs/signed_images.md#image-signing).
@@ -236,7 +238,9 @@ Other toolchains will have a similar utility to perform this step.
 
 ### Merging it all together
 
-To be able to drag-and-drop program the whole demo together, it is necessary to merge all the hex files we created in the last steps together.
+Usually, if your target supports hex files, you can drag-and-drop one image at a time (waiting for each to finish) to program them into their respective locations.
+
+If your target doesn't support hex files or performs a whole chip erase upon every drag-and-drop action, it is necessary to merge all the hex files we created in the last steps together.
 
 At this step, you should have created three hex files:
 - mbed-mcuboot-demo.hex (the bootloader)
@@ -276,15 +280,16 @@ Once your target has been programmed, open a serial terminal to view the debug o
 ```
 -- Terminal on /dev/ttyACM1 - 9600,8,N,1 ---
 [INFO][BL]: Starting MCUboot
-[INFO][MCUb]: Primary image: magic=good, swap_type=0x2, copy_done=0x1, image_ok=0x1
-[INFO][MCUb]: Scratch: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-[INFO][MCUb]: Boot source: none
-[INFO][MCUb]: Swap type: none
+
+<Potentially random data from the UART>
+
 [INFO][BL]: Booting firmware image at 0x21000
 
 <Potentially random data from the UART>
 
-[INFO][main]: Hello version 1.2.3+4
+<Potentially random data from the UART>
+
+[INFO][main]: Regular boot
 [INFO][main]: > Press button to erase secondary slot
 
 ```
@@ -319,8 +324,6 @@ This causes the bootloader to check the secondary slot for a valid update binary
 You should see output similar to the following:
 
 ```
-[DBG ][MCUb]: writing magic; fa_id=1 off=0xbfff0 (0xbfff0)
-[DBG ][MCUb]: writing swap_info; fa_id=1 off=0xbffd8 (0xbffd8), swap_type=0x2 image_num=0x0
 [INFO][main]: > Secondary image pending, reboot to update
 ```
 
@@ -330,39 +333,26 @@ Now all you need to do to perform the update is reset your Mbed board! The mcubo
 
 ```
 [INFO][BL]: Starting MCUboot
-[INFO][MCUb]: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-[INFO][MCUb]: Scratch: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-[INFO][MCUb]: Boot source: primary slot
-[INFO][MCUb]: Swap type: test
-[DBG ][MCUb]: erasing scratch area
-[DBG ][MCUb]: initializing status; fa_id=2
-[DBG ][MCUb]: writing swap_info; fa_id=2 off=0x1ffd8 (0xfffd8), swap_type=0x2 image_num=0x0
-[DBG ][MCUb]: writing swap_size; fa_id=2 off=0x1ffd0 (0xfffd0)
-[DBG ][MCUb]: writing magic; fa_id=2 off=0x1fff0 (0xffff0)
-[DBG ][MCUb]: erasing trailer; fa_id=0
-[DBG ][MCUb]: initializing status; fa_id=0
-[DBG ][MCUb]: writing swap_info; fa_id=0 off=0xbffd8 (0xdffd8), swap_type=0x2 image_num=0x0
-[DBG ][MCUb]: writing swap_size; fa_id=0 off=0xbffd0 (0xdffd0)
-[DBG ][MCUb]: writing magic; fa_id=0 off=0xbfff0 (0xdfff0)
-[DBG ][MCUb]: erasing trailer; fa_id=1
-[DBG ][MCUb]: writing copy_done; fa_id=0 off=0xbffe0 (0xdffe0)
+
+<Potentially random data from the UART>
+
 [INFO][BL]: Booting firmware image at 0x21000
 
 <Potentially random data from the UART>
 
-[INFO][main]: Boot confirmed
-[INFO][main]: Hello version 1.2.3+5
-[INFO][main]: > Press button to erase secondary slot
+[INFO][main]: Firmware update applied successfully
+[INFO][main]: Press the button to confirm, or reboot to revert the update
 ```
-
-Notice that the reported version number has changed! The update was performed successfully.
 
 **Note:** After an update is performed, the new application must mark itself as "okay" to the mcuboot bootloader. If this does not occur, mcuboot will revert the update upon the next reboot (if configured to do so).
 
-The blinky application in this demo always does this at startup:
+To make the update as "okay", press the button as instructed. This causes the application to call
+`boot_set_confirmed()`.
+
+Now you should see:
 
 ```
-int ret = boot_set_confirmed();
+[INFO][main]: Current firmware set as confirmed
 ```
 
-In real world situations, your application should run a self test routine to ensure it can receive updates in the future (eg: the UART software works as expected, the BLE stack initializes successfully, etc).
+**Note:** In real world situations, your application should run a self test routine to ensure it can receive updates in the future (eg: the UART software works as expected, the BLE stack initializes successfully, etc).
