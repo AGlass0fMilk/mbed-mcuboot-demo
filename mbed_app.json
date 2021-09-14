@@ -1,5 +1,5 @@
 {
-    "requires": ["bare-metal", "mbedtls", "mcuboot", "flashiap-block-device", "spif-driver", "qspif", "mbed-trace"],
+    "requires": ["bare-metal", "mbedtls", "mcuboot", "flashiap-block-device", "spif-driver", "qspif", "mbed-trace", "sd"],
     "config": {
         "serial-bootloader-enable": {
             "help": "Build bootloader with serial update support",
@@ -8,10 +8,12 @@
     },
     "target_overrides": {
         "*": {
+            "platform.stdio-baud-rate": 115200,
             "target.restrict_size": "0x20000",
             "target.c_lib": "small",
             "mcuboot.log-level": "MCUBOOT_LOG_LEVEL_DEBUG",
             "mbed-trace.enable": true,
+            "mbed-trace.max-level": "TRACE_LEVEL_DEBUG",
             "mbed-trace.fea-ipv6": false
         },
         "NRF52840_DK": {
@@ -44,6 +46,14 @@
             "mcuboot.max-img-sectors": "0x180",
             "mcuboot.read-granularity": 1,
             "qspif.QSPI_MIN_PROG_SIZE": 1
+        },
+        "K64F": {
+            "mcuboot.primary-slot-address": "0x20000",
+            "mcuboot.slot-size": "0xC0000",
+            "mcuboot.scratch-address": "0xE0000",
+            "mcuboot.scratch-size": "0x20000",
+            "mcuboot.max-img-sectors": "0x180",
+            "mcuboot.read-granularity": 512
         }
     }
 }

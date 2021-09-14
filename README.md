@@ -433,3 +433,11 @@ With `mcuboot.shared-data` enabled, the MCUboot bootloader expects a C function 
 Once you have shared data setup and configured for both the bootloader and application, you are ready to access the shared data. During boot, the bootloader will populate the shared data RAM region with the information as you specify in the `boot_save_shared_data` function. The application may then read that information back.
 
 An example of how to do this is built into the `mbed-mcuboot-blinky` application when `mcuboot.share-data` is set to true.
+
+## Minimizing Code Size
+
+A common goal of bootloader implementers is to minimize the code size of the bootloader, thereby maximizing the available space for the application. Through configuration, it is possible to acheive relatively small MCUboot-based bootloader builds.
+
+For example, you can configure `target.printf_lib` to `minimal-printf` rather than `std` to use a reduced-feature-set version of `printf`.
+
+You can also entirely disable logging output by setting `mbed-trace.enable` to `false`. You can also eliminate the stdio console entirely (TODO - explain how to do this).
