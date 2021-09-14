@@ -394,6 +394,8 @@ Several configuration changes must be made in both the bootloader and applicatio
 - `mcuboot.share-data-size` is set to the number of bytes you want to reserve in RAM for the shared data
 - You must add the following entries to your `target.macros_add` configuration: `MBED_RAM_START=<address>` and `MBED_RAM_SIZE=<RAM size minus reserved region size>`.
 
+**Note**: Some targets, like the K64F, do not support the macros `MBED_RAM_START` and `MBED_RAM_SIZE`. In this case, you will need to use a custom linker script. See [the README.md in the `linker` directory](https://github.com/AGlass0fMilk/mbed-mcuboot-demo/tree/master/linker).
+
 `MBED_RAM_START` should be the starting address of RAM as per your MCU's datasheet. `MBED_RAM_SIZE` should be the total size of your MCU's RAM minus the number of bytes you are reserving for shared data. Note that the required reserved RAM depends on how many entries you want to share with the application.
 
 As mentioned in the MCUboot documentation, the data share region has a global header that is 4 bytes. Each TLV entry has a header size of 4 bytes, plus the number of bytes required to store the data you are sharing.
@@ -413,8 +415,11 @@ Let's say you want to reserve 512 bytes of RAM for data sharing, your MCU has a 
 Calculations to get the above:
 
 `mcuboot.share-data-size = reserved_bytes = 512`
+
 `MBED_RAM_START = 0x20000000`
+
 `mcuboot.share-data-base-address = MBED_RAM_START + total_RAM - reserved_bytes = 0x20000000 + 64kB - 512 = 0x20000000 + 0x10000 - 0x200 = 0x2000FE00`
+
 `MBED_RAM_SIZE = total_RAM - reserved_bytes = 0x10000 - 0x200 = 0xFE00`
 
 Note that you will have to add this configuration to both your bootloader and application builds. Setting `MBED_RAM_SIZE` prevents initialization code from clearing the reserved RAM region at startup, which would corrupt the shared data.
