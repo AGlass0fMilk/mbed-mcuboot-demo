@@ -74,7 +74,7 @@
             "mcuboot.max-img-sectors": "0x180",
             "mcuboot.read-granularity": 512,
             "mcuboot.share-data": true,
-            "mcuboot.share-data-base-address": "0x20000000",
+            "mcuboot.share-data-base-address": "0x2002FF80",
             "mcuboot.share-data-size": "0x80"
         }
     }
