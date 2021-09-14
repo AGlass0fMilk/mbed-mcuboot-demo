@@ -23,6 +23,8 @@
 #include "boot_record.h"
 #include "shared_data.h"
 
+#include <string.h>
+
 #if MCUBOOT_DATA_SHARING && MCUBOOT_BOOTLOADER_BUILD
 
 int boot_save_shared_data(const struct image_header *hdr,
