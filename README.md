@@ -446,3 +446,28 @@ A common goal of bootloader implementers is to minimize the code size of the boo
 For example, you can configure `target.printf_lib` to `minimal-printf` rather than `std` to use a reduced-feature-set version of `printf`.
 
 You can also entirely disable logging output by setting `mbed-trace.enable` to `false`. You can also eliminate the stdio console entirely (TODO - explain how to do this).
+
+
+## Troubleshooting
+
+When troubleshooting, it is best to enable bootloader logging by setting `mbed-trace.enable` and `mcuboot.enable-logging` to `true` in your mbed_app.json configuration.
+
+### Swap boots fail with message "Cannot upgrade: slots have non-compatible sectors"
+
+The best way to debug this issue is to step debug the bootloader while your MCU is booting. Particularly, pay attention to [the `boot_slots_compatible` function](https://github.com/mcu-tools/mcuboot/blob/f7319e61fbcaaf3ed50c3c194743a7be04572905/boot/bootutil/src/swap_scratch.c#L169-L176) in MCUboot's sources.
+
+A common issue here is that your configuration does not allow enough boot image sectors to be allocated. At startup, MCUboot iterates through the image slots and maps out their sectors, ie: it loops through your image slots and detects the erase size of each sector throughout, storing the results in an array.
+
+If the array is not large enough to store information about all the sectors in one of your devices, you may encounter this issue and update swaps will fail.
+
+An example of when this might happen:
+
+Let's say during development you were using a flash chip that had erase sectors that were 4kB in size. Your slot size was 1MB, so you set your maximum image sectors to 256. Later on, to accomodate developing product requirements, the hardware team switched to providing an SD card for external non-volatile memory storage. The SD card has erase sectors of 512 bytes.
+
+Now there is a problem! You only allocate 256 sector info structures in MCUboot's arrays, but your new external (SD card) flash has 1MB/512 = 2048 sectors!
+
+Since MCUboot cannot store information about all the sectors on your external flash now, the swap update will fail.
+
+Whenever you change flash you must check if your `mcuboot.max-img-sectors` parameter must be updated. In this case, you can solve the issue by changing this parameter from 256 to 2048.
+
+**Note:** Also make sure to adjust the `-M` parameter you using when signing your binaries with `imgtool`! The `-M` parameter specifies the maximum number of image sectors.
