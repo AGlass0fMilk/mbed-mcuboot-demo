@@ -355,4 +355,84 @@ Now you should see:
 [INFO][main]: Current firmware set as confirmed
 ```
 
-**Note:** In real world situations, your application should run a self test routine to ensure it can receive updates in the future (eg: the UART software works as expected, the BLE stack initializes successfully, etc).
+In real world situations, your application should run a self test routine to ensure it can receive updates in the future (eg: the UART software works as expected, the BLE stack initializes successfully, etc).
+
+## Additional Features
+
+MCUboot integrates a number of additional features that are commonly used in bootloader situations. More details of these features can be found in the mcuboot documentation/code.
+
+The following sections detail how to enable and use these features in your Mbed-based bootloader/application.
+
+### [Direct XIP](https://www.mcuboot.com/documentation/design/#direct-xip)
+
+TODO
+
+### [Shared Data (experimental)](https://www.mcuboot.com/documentation/design/#boot-data-sharing)
+
+From the MCUboot documentation:
+
+> MCUBoot defines a mechanism for sharing boot status information (also known as measured boot) and an interface for sharing application specific information with the runtime software. 
+
+The data shared from the bootloader to the application is stored in a reserved section of RAM in the form of type-length-value (TLV) encoded entries. This allows you to share any arbitrary data from the bootloader to the application.
+
+#### Configuration
+
+Several configuration changes must be made in both the bootloader and application to enable this feature. Namely:
+
+- `mcuboot.share-data` must be configured to `true`
+- `mcuboot.share-data-base-address` must be set to a word-aligned memory address in RAM. Typically, a small section of RAM is reserved at the end of the MCU's RAM address space for data sharing, which brings us to the next configuration parameters
+- `mcuboot.share-data-size` is set to the number of bytes you want to reserve in RAM for the shared data
+- You must add the following entries to your `target.macros_add` configuration: `MBED_RAM_START=<address>` and `MBED_RAM_SIZE=<RAM size minus reserved region size>`.
+
+**Note**: Some targets, like the K64F, do not support the macros `MBED_RAM_START` and `MBED_RAM_SIZE`. In this case, you will need to use a custom linker script. See [the README.md in the `linker` directory](https://github.com/AGlass0fMilk/mbed-mcuboot-demo/tree/master/linker).
+
+`MBED_RAM_START` should be the starting address of RAM as per your MCU's datasheet. `MBED_RAM_SIZE` should be the total size of your MCU's RAM minus the number of bytes you are reserving for shared data. Note that the required reserved RAM depends on how many entries you want to share with the application.
+
+As mentioned in the MCUboot documentation, the data share region has a global header that is 4 bytes. Each TLV entry has a header size of 4 bytes, plus the number of bytes required to store the data you are sharing.
+
+Let's say you want to reserve 512 bytes of RAM for data sharing, your MCU has a RAM address space that starts at `0x20000000` and your MCU physically has 64kB of RAM. In this case, your configuration file will look as follows:
+
+```
+[...]
+"mcuboot.share-data": true,
+"mcuboot.share-data-base-address": "0x2000FE00",
+"mcuboot.share-data-size": "0x200",
+"target.macros_add": ["MBED_RAM_START=0x20000000", 
+                      "MBED_RAM_SIZE=0xFE00"],
+[...]
+```
+
+Calculations to get the above:
+
+`mcuboot.share-data-size = reserved_bytes = 512`
+
+`MBED_RAM_START = 0x20000000`
+
+`mcuboot.share-data-base-address = MBED_RAM_START + total_RAM - reserved_bytes = 0x20000000 + 64kB - 512 = 0x20000000 + 0x10000 - 0x200 = 0x2000FE00`
+
+`MBED_RAM_SIZE = total_RAM - reserved_bytes = 0x10000 - 0x200 = 0xFE00`
+
+Note that you will have to add this configuration to both your bootloader and application builds. Setting `MBED_RAM_SIZE` prevents initialization code from clearing the reserved RAM region at startup, which would corrupt the shared data.
+
+Also note that any RAM reserved for data sharing will be unavailable to the application stack/heap (TODO: fix this, better mbed-os integration), so try to keep your reserved region as small as possible.
+For an example configuration that is already setup for the nRF52840_DK target, see the `mbed_app_data_sharing.json` file in this repository.
+
+**Note:** With Mbed CLI 1, you can use the `--app-config mbed_app_data_sharing.json` option flag to use the data sharing configuration without renaming any files. Building the bootloader and application with this flag will demonstrate usage of the data sharing feature.
+
+#### Code Changes - Bootloader
+
+With `mcuboot.shared-data` enabled, the MCUboot bootloader expects a C function to be defined called `boot_save_shared_data`. This function provides a hook for you to add custom TLVs to the shared data region as you require. For an example implementation, see the `shared_data.c/.h` files in this repository.
+
+#### Code Changes - Application
+
+Once you have shared data setup and configured for both the bootloader and application, you are ready to access the shared data. During boot, the bootloader will populate the shared data RAM region with the information as you specify in the `boot_save_shared_data` function. The application may then read that information back.
+
+An example of how to do this is built into the `mbed-mcuboot-blinky` application when `mcuboot.share-data` is set to true.
+
+## Minimizing Code Size
+
+A common goal of bootloader implementers is to minimize the code size of the bootloader, thereby maximizing the available space for the application. Through configuration, it is possible to acheive relatively small MCUboot-based bootloader builds.
+
+For example, you can configure `target.printf_lib` to `minimal-printf` rather than `std` to use a reduced-feature-set version of `printf`.
+
+You can also entirely disable logging output by setting `mbed-trace.enable` to `false`. You can also eliminate the stdio console entirely (TODO - explain how to do this).
